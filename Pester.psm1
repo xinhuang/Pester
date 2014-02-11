@@ -109,7 +109,32 @@ about_pester
 
     Get-ChildItem $pester.fixtures_path -Include "*.ps1" -Recurse |
         ? { $_.Name -match "\.Tests\." } |
-        % { & $_.PSPath }
+        % { 
+            $fixture = $_
+            try { & $fixture.PSPath } 
+            catch [System.Management.Automation.ParseException] {
+                $describe = @{
+                    name = $fixture.Name
+                    Tests = @{
+                        name = $fixture.Name
+                        time = 0
+                        failureMessage = $_
+                        stackTrace = ""
+                        success = $false
+                    }
+                }
+                $pester.results = Get-GlobalTestResults
+                $pester.error_margin = $pester.margin * 2
+                $pester.humanSeconds = Get-HumanTime 0
+                $pester.output = " $($pester.margin)$($fixture.Name)"
+                $pester.results.Describes += $describe
+                $pester.results.FailedTestsCount += 1
+                $pester.results.TestCount += 1
+
+                "[-] $($pester.output) $($pester.humanSeconds)" | Write-Host -ForegroundColor red
+                Write-Host -ForegroundColor red $_ 
+            }
+        }
 
     Write-TestReport
 

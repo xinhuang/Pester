@@ -39,6 +39,4 @@ Describe "It" {
     It "won't throw if success test block given" {
         { It "test block" {} } | Should Not Throw
     }
-
 }
-
